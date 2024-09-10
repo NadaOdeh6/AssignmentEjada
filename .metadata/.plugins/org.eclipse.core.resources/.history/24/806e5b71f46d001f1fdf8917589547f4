@@ -1,0 +1,83 @@
+package apitest;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+public class APITests {
+	 static {
+	        RestAssured.baseURI = "https://simple-books-api.glitch.me";
+	    }
+
+	    @Test
+	    public void testGetBooks() {
+	        given()
+	            .when()
+	            .get("/books")
+	            .then()
+	            .statusCode(200)
+	            .body("size()", greaterThan(0));  // Check that the response contains a list of books
+	    }
+
+	    @Test
+	    public void testGetBookById() {
+	        int bookId = 1;
+	        
+	        given()
+	            .pathParam("id", bookId)
+	            .when()
+	            .get("/books/{id}")
+	            .then()
+	            .statusCode(200)
+	            .body("id", equalTo(bookId));
+	    }
+
+	    @Test
+	    public void testPostOrder() {
+	        // Place a new order for a book
+	        String requestBody = "{\n" +
+	                "  \"bookId\": 1,\n" +
+	                "  \"customerName\": \"John Doe\"\n" +
+	                "}";
+
+	        given()
+	            .header("Content-Type", "application/json")
+	            .body(requestBody)
+	            .when()
+	            .post("/orders")
+	            .then()
+	            .statusCode(201)  // 201 indicates that the order was created successfully
+	            .body("created", equalTo(true));
+	    }
+
+	    @Test
+	    public void testPatchOrder() {
+	        // Update the name of a customer in an existing order
+	        String requestBody = "{\n" +
+	                "  \"customerName\": \"Jane Doe\"\n" +
+	                "}";
+
+	        String orderId = "1";  // Use the appropriate order ID
+
+	        given()
+	            .header("Content-Type", "application/json")
+	            .body(requestBody)
+	            .when()
+	            .patch("/orders/" + orderId)
+	            .then()
+	            .statusCode(204);  // 204 indicates success with no content
+	    }
+
+	    @Test
+	    public void testDeleteOrder() {
+	        String orderId = "1";  // Use the appropriate order ID
+
+	        given()
+	            .when()
+	            .delete("/orders/" + orderId)
+	            .then()
+	            .statusCode(204);  // 204 indicates that the order was successfully deleted
+	    }
+}

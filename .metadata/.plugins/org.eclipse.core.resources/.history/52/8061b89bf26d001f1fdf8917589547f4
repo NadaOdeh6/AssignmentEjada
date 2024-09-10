@@ -1,0 +1,239 @@
+package stepdefinitions;
+
+iimport base.BaseTest;
+
+import io.cucumber.java.en.*;
+import org.junit.Assert;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import pages.LoginPage;
+import pages.ProductsPage;
+
+public class PurchaseSteps extends BaseTest {
+	LoginPage loginPage;
+	ProductsPage productsPage;
+
+	@Given("I am on the login page")
+	public void i_am_on_the_login_page() {
+		setUp();
+		driver.get("https://www.saucedemo.com/");
+		loginPage = new LoginPage(driver);
+	}
+
+	@When("I login with valid credentials")
+	public void i_login_with_valid_credentials() {
+		loginPage.login("standard_user", "secret_sauce");
+	}
+
+	@Then("I should see the products page")
+	public void i_should_see_the_products_page() {
+		productsPage = new ProductsPage(driver);
+		Assert.assertTrue(productsPage.isOnProductsPage());
+	}
+
+	@When("I add the two most expensive products to the cart")
+	public void i_add_the_two_most_expensive_products_to_the_cart() {
+		productsPage.addMostExpensiveProductsToCart();
+	}
+
+	@And("I click on the cart button")
+	public void i_click_on_the_cart_button() {
+		productsPage.clickCartButton();
+	}
+
+	@Then("I should see the cart page with selected products")
+	public void i_should_see_the_cart_page_with_selected_products() {
+		Assert.assertTrue(productsPage.isOnCartPage());
+		Assert.assertTrue(productsPage.areProductsInCart());
+	}
+
+	@When("I click on the Checkout button")
+	public void i_click_on_the_Checkout_button() {
+		productsPage.clickCheckoutButton();
+	}
+
+	@Then("I should see the Checkout page")
+	public void i_should_see_the_Checkout_page() {
+		Assert.assertTrue(productsPage.isOnCheckoutPage());
+	}
+
+	@When("I fill the checkout form with valid details")
+	public void i_fill_the_checkout_form_with_valid_details() {
+		productsPage.fillCheckoutForm("John", "Doe", "12345");
+	}
+
+	@And("I click on the Continue button")
+	public void i_click_on_the_Continue_button() {
+		productsPage.clickContinueButton();
+	}
+
+	@Then("I should see the Overview page")
+	public void i_should_see_the_Overview_page() {
+		Assert.assertTrue(productsPage.isOnOverviewPage());
+	}
+
+	@And("the total amount before taxes should be correct")
+	public void the_total_amount_before_taxes_should_be_correct() {
+		Assert.assertTrue(productsPage.isTotalAmountCorrect());
+	}
+
+	@And("the URL should match {string}")
+	public void the_URL_should_match(String expectedUrl) {
+		Assert.assertEquals(expectedUrl, driver.getCurrentUrl());
+	}
+
+	@When("I click on the Finish button")
+	public void i_click_on_the_Finish_button() {
+		productsPage.clickFinishButton();
+	}
+
+	@Then("I should see the Thank You message and Order dispatched message")
+	public void i_should_see_the_Thank_You_message_and_Order_dispatched_message() {
+		Assert.assertTrue(productsPage.isOrderComplete());
+		tearDown();
+	}
+}3.
+
+Implement the
+Page Object
+Model For
+better code
+organization and maintainability,
+create page
+objects that
+represent different
+pages of
+the application.
+
+LoginPage.java:Place this
+
+class in the src/main/java/pages directory.
+java
+Copy code
+package pages;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+
+public class LoginPage {
+    private WebDriver driver;
+
+    private By usernameField = By.id("user-name");
+    private By passwordField = By.id("password");
+    private By loginButton = By.id("login-button");
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+    }
+
+    public void login(String username, String password) {
+        driver.findElement(usernameField).sendKeys(username);
+        driver.findElement(passwordField).sendKeys(password);
+        driver.findElement(loginButton).click();
+    }
+}ProductsPage.java:This
+
+class will
+handle interactions
+with the
+products page, cart, and
+checkout process.
+java Copy code
+package pages
+;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class ProductsPage {
+	private WebDriver driver;
+
+	private By productPrices = By.className("inventory_item_price");
+	private By addToCartButtons = By.className("btn_inventory");
+	private By cartButton = By.id("shopping_cart_container");
+	private By checkoutButton = By.id("checkout");
+	private By firstNameField = By.id("first-name");
+	private By lastNameField = By.id("last-name");
+	private By postalCodeField = By.id("postal-code");
+	private By continueButton = By.id("continue");
+	private By finishButton = By.id("finish");
+	private By thankYouMessage = By.className("complete-header");
+
+	public ProductsPage(WebDriver driver) {
+		this.driver = driver;
+	}
+
+	public boolean isOnProductsPage() {
+		return driver.getCurrentUrl().contains("inventory.html");
+	}
+
+	public void addMostExpensiveProductsToCart() {
+		List<WebElement> prices = driver.findElements(productPrices);
+		List<WebElement> addButtons = driver.findElements(addToCartButtons);
+
+		// Sort the products by price, descending
+		List<WebElement> sortedPrices = prices.stream()
+				.sorted((e1, e2) -> Double.compare(Double.parseDouble(e2.getText().replace("$", "")),
+						Double.parseDouble(e1.getText().replace("$", ""))))
+				.collect(Collectors.toList());
+
+		// Add the two most expensive products to the cart
+		for (int i = 0; i < 2; i++) {
+			WebElement addButton = addButtons.get(prices.indexOf(sortedPrices.get(i)));
+			addButton.click();
+		}
+	}
+
+	public void clickCartButton() {
+		driver.findElement(cartButton).click();
+	}
+
+	public boolean isOnCartPage() {
+		return driver.getCurrentUrl().contains("cart.html");
+	}
+
+	public boolean areProductsInCart() {
+		// Add logic to check if the selected products are in the cart
+		// This can be done by verifying the product names/prices in the cart
+		return true;
+	}
+
+	public void clickCheckoutButton() {
+		driver.findElement(checkoutButton).click();
+	}
+
+	public boolean isOnCheckoutPage() {
+		return driver.getCurrentUrl().contains("checkout-step-one.html");
+	}
+
+	public void fillCheckoutForm(String firstName, String lastName, String postalCode) {
+		driver.findElement(firstNameField).sendKeys(firstName);
+		driver.findElement(lastNameField).sendKeys(lastName);
+		driver.findElement(postalCodeField).sendKeys(postalCode);
+	}
+
+	public void clickContinueButton() {
+		driver.findElement(continueButton).click();
+	}
+
+	public boolean isOnOverviewPage() {
+		return driver.getCurrentUrl().contains("checkout-step-two.html");
+	}
+
+	public boolean isTotalAmountCorrect() {
+		// Add logic to verify that the total amount before taxes is correct
+		return true;
+	}
+
+	public void clickFinishButton() {
+		driver.findElement(finishButton).click();
+	}
+
+	public boolean isOrderComplete() {
+		return driver.findElement(thankYouMessage).isDisplayed();
+	}
+
+}

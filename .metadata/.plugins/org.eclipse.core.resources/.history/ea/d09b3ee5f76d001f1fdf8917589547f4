@@ -1,0 +1,85 @@
+package apitest;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+public class APITests {
+	 private static String accessToken;
+
+	    @BeforeAll
+	    public static void setup() {
+	        RestAssured.baseURI = "https://simple-books-api.glitch.me";
+
+	        // Register the API client and obtain the access token
+	        String requestBody = "{\n" +
+	                "  \"clientName\": \"Postman\",\n" +
+	                "  \"clientEmail\": \"valentin@example.com\"\n" +
+	                "}";
+
+	        Response response = given()
+	                .header("Content-Type", "application/json")
+	                .body(requestBody)
+	                .when()
+	                .post("/api-clients/")
+	                .then()
+	                .statusCode(201)  // Check that registration is successful
+	                .extract()
+	                .response();
+
+	        // Extract the access token from the response
+	        accessToken = response.jsonPath().getString("accessToken");
+	    }
+
+	    @Test
+	    public void testPostOrder() {
+	        String requestBody = "{\n" +
+	                "  \"bookId\": 1,\n" +
+	                "  \"customerName\": \"John Doe\"\n" +
+	                "}";
+
+	        given()
+	            .header("Authorization", "Bearer " + accessToken)  // Use the access token here
+	            .header("Content-Type", "application/json")
+	            .body(requestBody)
+	            .when()
+	            .post("/orders")
+	            .then()
+	            .statusCode(201)
+	            .body("created", equalTo(true));
+	    }
+
+	    @Test
+	    public void testPatchOrder() {
+	        String requestBody = "{\n" +
+	                "  \"customerName\": \"Jane Doe\"\n" +
+	                "}";
+
+	        String orderId = "1";  // Use the appropriate order ID
+
+	        given()
+	            .header("Authorization", "Bearer " + accessToken)  // Use the access token here
+	            .header("Content-Type", "application/json")
+	            .body(requestBody)
+	            .when()
+	            .patch("/orders/" + orderId)
+	            .then()
+	            .statusCode(204);
+	    }
+
+	    @Test
+	    public void testDeleteOrder() {
+	        String orderId = "1";  // Use the appropriate order ID
+
+	        given()
+	            .header("Authorization", "Bearer " + accessToken)  // Use the access token here
+	            .when()
+	            .delete("/orders/" + orderId)
+	            .then()
+	            .statusCode(204);
+	    }
+}

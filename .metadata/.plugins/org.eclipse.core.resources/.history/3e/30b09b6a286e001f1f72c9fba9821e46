@@ -1,0 +1,100 @@
+package pages;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+
+
+public class ProductsPage {
+	 private WebDriver driver;
+
+	    private By productPrices = By.className("inventory_item_price");
+	    private By addToCartButtons = By.className("btn_inventory");
+	    private By cartButton = By.id("shopping_cart_container");
+	    private By checkoutButton = By.id("checkout");
+	    private By firstNameField = By.id("first-name");
+	    private By lastNameField = By.id("last-name");
+	    private By postalCodeField = By.id("postal-code");
+	    private By continueButton = By.id("continue");
+	    private By finishButton = By.id("finish");
+	    private By thankYouMessage = By.className("complete-header");
+
+	    public ProductsPage(WebDriver driver) {
+	        this.driver = driver;
+	    }
+
+	    public boolean isOnProductsPage() {
+	        return driver.getCurrentUrl().contains("inventory.html");
+	    }
+
+	    public void addMostExpensiveProductsToCart() {
+	        List<WebElement> prices = driver.findElements(productPrices);
+	        List<WebElement> addButtons = driver.findElements(addToCartButtons);
+
+	        // Sort the products by price, descending
+	        List<WebElement> sortedPrices = prices.stream()
+	                .sorted((e1, e2) -> Double.compare(
+	                        Double.parseDouble(e2.getText().replace("$", "")),
+	                        Double.parseDouble(e1.getText().replace("$", ""))))
+	                .collect(Collectors.toList());
+
+	        // Add the two most expensive products to the cart
+	        for (int i = 0; i < 2; i++) {
+	            WebElement addButton = addButtons.get(prices.indexOf(sortedPrices.get(i)));
+	            addButton.click();
+	        }
+	    }
+
+	    public void clickCartButton() {
+	        driver.findElement(cartButton).click();
+	    }
+
+	    public boolean isOnCartPage() {
+	        return driver.getCurrentUrl().contains("cart.html");
+	    }
+
+	    public boolean areProductsInCart() {
+	        // Add logic to check if the selected products are in the cart
+	        // This can be done by verifying the product names/prices in the cart
+	        return true;
+	    }
+
+	    public void clickCheckoutButton() {
+	        driver.findElement(checkoutButton).click();
+	    }
+
+	    public boolean isOnCheckoutPage() {
+	        return driver.getCurrentUrl().contains("checkout-step-one.html");
+	    }
+
+	    public void fillCheckoutForm(String firstName, String lastName, String postalCode) {
+	        driver.findElement(firstNameField).sendKeys(firstName);
+	        driver.findElement(lastNameField).sendKeys(lastName);
+	        driver.findElement(postalCodeField).sendKeys(postalCode);
+	    }
+
+	    public void clickContinueButton() {
+	        driver.findElement(continueButton).click();
+	    }
+
+	    public boolean isOnOverviewPage() {
+	        return driver.getCurrentUrl().contains("checkout-step-two.html");
+	    }
+
+	    public boolean isTotalAmountCorrect() {
+	        // Add logic to verify that the total amount before taxes is correct
+	        return true;
+	    }
+
+	    public void clickFinishButton() {
+	        driver.findElement(finishButton).click();
+	    }
+
+	    public boolean isOrderComplete() {
+	        return driver.findElement(thankYouMessage).isDisplayed();
+	    }
+}

@@ -1,0 +1,124 @@
+package apitest;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+import java.time.LocalDate;
+
+
+public class APITests {
+	 private static String accessToken;
+
+	    @BeforeAll
+	    public static void setup() {
+	    	 LocalDate currentDate = LocalDate.now();
+	    	 String name = "Nada" + currentDate;
+	        RestAssured.baseURI = "https://simple-books-api.glitch.me";
+
+	        // Register the API client and obtain the access token
+	        String requestBody = "{\n" +
+	                "  \"clientName\": \"" + name + "\",\n" +
+	                "  \"clientEmail\": \""+ name +"@example.com\"\n" +
+	                "}";
+
+	        Response response = given()
+	                .header("Content-Type", "application/json")
+	                .body(requestBody)
+	                .when()
+	                .post("/api-clients/")  
+	                .then()
+	                .log().all()  // Log the response for debugging
+	                .extract()
+	                .response();
+
+	        int statusCode = response.getStatusCode();
+
+	        if (statusCode == 201) {
+	            // Success: Extract and store the access token
+	            accessToken = response.jsonPath().getString("accessToken");
+	            System.out.println("Access token received: " + accessToken);
+	        } else if (statusCode == 409) {
+	            System.out.println("Client already registered. Please use a different email and name.");
+	        } else if (statusCode == 404) {
+	            System.out.println("The endpoint was not found. Please check the URL.");
+	        } else {
+	            System.out.println("Unexpected status code: " + statusCode);
+	        }
+	    }
+	    
+	    @Test
+	    public void getAllBooks() {
+	    	   Response response = given()
+	    	            .auth()
+	    	            .oauth2(accessToken)  // Bearer Token Authentication
+	    	        .when()
+	    	            .get("/books")
+	    	        .then()
+	    	            .statusCode(200)  
+	    	            .extract()
+	    	            .response();
+
+	    	        System.out.println("Response: " + response.asString());
+	    	    
+		       
+//	        given()
+//	        .when()
+//	            .get("/books")
+//	        .then()
+//	            .statusCode(200) // Expecting successful retrieval
+//	            .body("size()", greaterThan(0)); // Check that there is at least one book
+	    }
+	    
+	    @Test
+	    public void testPostOrder() {
+	        String requestBody = "{\n" +
+	                "  \"bookId\": 1,\n" +
+	                "  \"customerName\": \"John Doe\"\n" +
+	                "}";
+
+	        given()
+	            .header("Authorization", "Bearer " + accessToken)  // Use the access token here
+	            .header("Content-Type", "application/json")
+	            .body(requestBody)
+	            .when()
+	            .post("/orders")
+	            .then()
+	            .statusCode(201)
+	            .body("created", equalTo(true));
+	    }
+
+	    @Test
+	    public void testPatchOrder() {
+	        String requestBody = "{\n" +
+	                "  \"customerName\": \"Jane Doe\"\n" +
+	                "}";
+
+	        String orderId = "1";  // Use the appropriate order ID
+
+	        given()
+	            .header("Authorization", "Bearer " + accessToken)  // Use the access token here
+	            .header("Content-Type", "application/json")
+	            .body(requestBody)
+	            .when()
+	            .patch("/orders/" + orderId)
+	            .then()
+	            .statusCode(204);
+	    }
+
+	    @Test
+	    public void testDeleteOrder() {
+	        String orderId = "1";  // Use the appropriate order ID
+
+	        given()
+	            .header("Authorization", "Bearer " + accessToken)  // Use the access token here
+	            .when()
+	            .delete("/orders/" + orderId)
+	            .then()
+	            .statusCode(204);
+	    }
+}
